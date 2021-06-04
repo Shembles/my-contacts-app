@@ -1,24 +1,52 @@
-import logo from './logo.svg';
+import React, { Suspense, useState } from "react";
+// import logo from './asserts/images/logo.svg';
 import './App.css';
+import { BrowserRouter as Router, Switch, Route, useHistory } from "react-router-dom";
+import routes from "./routes";
+import "semantic-ui-css/semantic.min.css";
+import { GlobalProvider } from "./context/Provider";
+import isAuthenticated from "./utils/isAuthenticated";
+import UserLeaveConfirmation from "./components/UserLeaveConfirmation";
 
-function App() {
+
+const RenderRoute = (route) => {
+  const history = useHistory();
+
+  document.title = route.title || "My Conntacts";
+
+  if (route.needsAuth && !isAuthenticated()) {
+    history.push("/auth/login");
+  }
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Route
+      path={route.path} 
+      exact 
+      render={(props) => <route.component {...props}/>}
+    ></Route>
+  );
+};
+function App() {
+
+  const [confirmOpen, setConfirmOpen] = useState(true);
+
+  return (
+    <GlobalProvider>
+      <Router getUserConfirmation={(message, callback) => {
+        return UserLeaveConfirmation(
+          message, 
+          callback,
+          confirmOpen,
+          setConfirmOpen
+          );
+      }}>
+        <Suspense fallback={<p>Loading</p>}>
+          <Switch>
+            {routes.map((route, index) => (
+              <RenderRoute {...route} key={index} />))}
+          </Switch>
+        </Suspense>
+      </Router>
+    </GlobalProvider>
   );
 }
 
